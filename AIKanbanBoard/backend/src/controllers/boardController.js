@@ -15,13 +15,13 @@ const listBoards = asyncHandler(async (req, res) => {
         LEFT JOIN board_members mm ON mm.board_id = b.id AND mm.user_id = $1
       WHERE b.owner_id = $1 OR mm.user_id = $1
       ORDER BY b.updated_at DESC`,
-    [req.user. id]
+    [req.user.id]
   );
   res.json({ boards: rows });
 });
 
 const createBoard = asyncHandler(async (req, res) => {
-  const title = (req.body. title || "").trim();
+  const title = (req.body.title || "").trim();
   const description = (req.body.description || "").trim() || null;
   const color = req.body.color || "#6366f1";
   if (!title) throw ApiError.badRequest("Board title is required");
@@ -61,7 +61,7 @@ const getBoard = asyncHandler(async (req, res) => {
       `SELECT t .* ,
           a.name AS assignee_name, a.email AS assignee_email, a.avatar_url AS assignee_avatar
        FROM tasks t
-       LEFT JOIN users a ON a. id = t.assignee_id
+       LEFT JOIN users a ON a.id = t.assignee_id
       WHERE t.board_id = $1
       ORDER BY t.position ASC`,
     [boardId]
@@ -102,7 +102,7 @@ const updateBoard = asyncHandler(async (req, res) => {
 });
 
 const deleteBoard = asyncHandler(async (req, res) => {
-  if (req.board. role !== "owner")
+  if (req.board.role !== "owner")
     throw ApiError. forbidden("Only the owner can delete this board");
   await query("DELETE FROM boards WHERE id = $1", [req.board.id] );
   emitToBoard(req.board.id, "board:deleted", { id: req.board.id });
@@ -114,7 +114,7 @@ const getActivity = asyncHandler(async (req, res) => {
   const { rows } = await query(
     `SELECT act .* , u.name AS user_name, u.avatar_url AS user_avatar
       FROM activities act
-      LEFT JOIN users u ON u. id = act.user_id
+      LEFT JOIN users u ON u.id = act.user_id
      WHERE act.board_id = $1
      ORDER BY act.created_at DESC
      LIMIT $2`,
@@ -124,11 +124,11 @@ const getActivity = asyncHandler(async (req, res) => {
 });
 
 const addMember = asyncHandler(async (req, res) =>{
-  if (req.board. role !== "owner" && req.board. role !== "admin")
+  if (req.board.role !== "owner" && req.board.role !== "admin")
     throw ApiError. forbidden("Only owners or admins can add members");
 
-  const email = (req.body.email || "").trim() .toLowerCase();
-  const role = req.body. role === "admin" ? "admin" : "member";
+  const email = (req.body.email || "").trim().toLowerCase();
+  const role = req.body.role === "admin" ? "admin" : "member";
   if (!email) throw ApiError.badRequest("Member email is required");
 
   const userRes = await query("SELECT id, name, email, avatar_url FROM users WHERE email = $1", [email]);
@@ -150,11 +150,11 @@ const addMember = asyncHandler(async (req, res) =>{
     metadata: { memberId: user.id },
   });
 
-  res.status(201).json({ member: { ... user, role } });
+  res.status(201).json({ member: { ...user, role } });
 });
 
 const removeMember = asyncHandler(async (req, res) => {
-  if (req.board. role !== "owner" && req.board. role !== "admin")
+  if (req.board.role !== "owner" && req.board.role !== "admin")
     throw ApiError. forbidden("Only owners or admins can remove members");
   const { userId } = req.params;
   if (userId === req.board.owner_id) throw ApiError.badRequest("Cannot remove the board owner");

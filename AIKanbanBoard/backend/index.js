@@ -1,4 +1,6 @@
 require("dotenv").config();
+
+const http = require("http")
 const express = require("express");
 const cors = require("cors");
 const apiRoutes = require("./src/routes");
@@ -6,6 +8,7 @@ const {
   errorHandler,
   notFoundHandler,
 } = require("./src/middleware/errorHandler");
+const { initSocket } = require("./src/socket");
 
 const app = express();
 
@@ -25,9 +28,12 @@ app. use("/api", apiRoutes);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
+const server = http.createServer(app);
+initSocket(server);
+
 const PORT = process.env.PORT || 5050;
 app. listen(PORT, () => {
-  console.log(`🚀API listening on http://localhost:${PORT}`);
+  console.log(`🚀API + Socket.IO listening on http://localhost:${PORT}`);
 });
 
 module.exports=app;
