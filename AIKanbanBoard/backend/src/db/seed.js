@@ -119,7 +119,7 @@ const PRIO_CYCLE = ["medium", "high", "low", "urgent", "medium", "high", "low", 
 const DUE_CYCLE = [-9, 2, null, 5, -2, 14, 1, null, 20, -4, 6, 9, 3, null, 12, -1, 7];
 
 const run = async () =>{
-  await withTransaction(async (c) =>
+  await withTransaction(async (c) => {
 
     await c.query("DELETE FROM users WHERE email = ANY($1)", [
       USERS.map((u) => u.email.toLowerCase()),
@@ -144,7 +144,7 @@ const run = async () =>{
 
       const { rows: br } = await c.query(
         `INSERT INTO boards (title, description, color, owner_id, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, now() - interval '45 days', $5) RETURNING id`,
+        VALUES ($1, $2, $3, $4, now() - interval '45 days', $5) RETURNING id`,
         [b.title, b.description, b.color, ownerId, updatedAt]
       );
       const boardId = br[0].id;
@@ -162,7 +162,7 @@ const run = async () =>{
           [boardId, uid[mk], role]
         );
       }
-      
+        
       const colIds = [];
       for (let i=0; i < COLUMNS.length; i++) {
         const { rows: cr } = await c.query(
@@ -175,53 +175,60 @@ const run = async () =>{
       const assignPool = ["alex", "alex", ...memberKeys];
 
       for (let i=0; i < b.tasks.length; i++) {
-      const colIdx = COL_CYCLE[i % COL_CYCLE.length];
-      const priority = PRIO_CYCLE[(i + b.title.length) % PRIO_CYCLE.length];
-      const offset = DUE_CYCLE[(i + b.tasks.length) % DUE_CYCLE.length];
-      const dueDate = offset === null ? null : new Date(Date.now() + offset * DAY);
-      const assigneeKey = i % 5 === 4 ? null : assignPool[i % assignPool.length];
-      const assigneeId = assigneeKey ? uid[assigneeKey] : null;
+        const colIdx = COL_CYCLE[i % COL_CYCLE.length];
+        const priority = PRIO_CYCLE[(i + b.title.length) % PRIO_CYCLE.length];
+        const offset = DUE_CYCLE[(i + b.tasks.length) % DUE_CYCLE.length];
+        const dueDate = offset === null ? null : new Date(Date.now() + offset * DAY);
+        const assigneeKey = i % 5 === 4 ? null : assignPool[i % assignPool.length];
+        const assigneeId = assigneeKey ? uid[assigneeKey] : null;
 
-      await c.query(
-        `INSERT INTO tasks
-          (board_id, column_id, title, description, priority, due_date, assignee_id, position, created_by, created_at, updated_at)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, now() - interval '20 days', $10)`,
-        [
-          boardId,
-          colIds [colIdx],
-          b.tasks [i],
-          i % 3 === 0 ? `${b.tasks[i]} - details and acceptance criteria.` : null,
-          priority,
-          dueDate,
-          assigneeId,
-          (i + 1) * 1000,
-          ownerId,
-          updatedAt,
-        ]
-      );
-      taskTotal += 1;
-    }
+        await c.query(
+          `INSERT INTO tasks
+           (board_id, column_id, title, description, priority, due_date, assignee_id, position, created_by, created_at, updated_at)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, now() - interval '20 days', $10)`,
+          [
+            boardId,
+            colIds [colIdx],
+            b.tasks [i],
+            i % 3 === 0 ? `${b.tasks[i]} - details and acceptance criteria.` : null,
+            priority,
+            dueDate,
+            assigneeId,
+            (i + 1) * 1000,
+            ownerId,
+            updatedAt,
+          ]
+        );
+        taskTotal += 1;
+      }
 
-    const ownerName = USERS.find((u) => u.key === b.owner).name;
-    const acts = [
-      { action: "board.created", message: `${ownerName} created the board` },
-      { action: "task. created", message: `${ownerName} added "${b.tasks[0]}"` },
-      { action: "task.moved", message: `${USERS.find((u) => u.key === memberKeys [1] || u.key === b.owner)?.name || ownerName} moved "${b.tasks[Math.min(3, b.tasks.length - 1)]}" to Done`},
-    ];
-    for (let ai = 0; ai < acts.length; ai++) {
-      await c.query(
-        `INSERT INTO activities (board_id, user_id, action, message, created_at)
-        VALUES ($1, $2, $3, $4, now() - ($5 || ' hours') :: interval)`,
-        [boardId, ownerId, acts[ai].action, acts[ai].message, (ai + 1) * 7]
-      );
-    }
-  } 
+      const ownerName = USERS.find((u) => u.key === b.owner).name;
+      const acts = [
+        { action: "board.created", message: `${ownerName} created the board` },
+        { action: "task. created", message: `${ownerName} added "${b.tasks[0]}"` },
+        { action: "task.moved", message: `${USERS.find((u) => u.key === memberKeys [1] || u.key === b.owner)?.name || ownerName} moved "${b.tasks[Math.min(3, b.tasks.length - 1)]}" to Done`},
+      ];
+      for (let ai = 0; ai < acts.length; ai++) {
+        await c.query(
+          `INSERT INTO activities (board_id, user_id, action, message, created_at)
+          VALUES ($1, $2, $3, $4, now() - ($5 || ' hours') :: interval)`,
+          [boardId, ownerId, acts[ai].action, acts[ai].message, (ai + 1) * 7]
+        );
+      }
+    } 
 
-  return taskTotal;
+    return taskTotal;
   }).then((taskTotal) => {
-    console.log("  Demo workspace seeded.");
+    console.log("✅Demo workspace seeded.");
     console.log(  `Users: ${USERS.length} Boards: ${BOARDS.length}  Tasks: ${taskTotal}`);
-    console.log("  Login: alex@timetoprogram.com / Test@1234");
+    console.log("  Login: alex@novreg.ru / Test@1234");
     console.log("  (teammates share the same password)");
   });
 };
+
+run()
+  .catch((err) => {
+    console.error(" Seed failed:",err.message);
+    process.exitCode =1
+  })
+  .finally(()=>pool.end());
