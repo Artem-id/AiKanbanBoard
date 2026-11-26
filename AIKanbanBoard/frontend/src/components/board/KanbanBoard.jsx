@@ -5,6 +5,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  TouchSensor,
   pointerWithin,
   closestCorners,
 } from "@dnd-kit/core";
@@ -26,8 +27,12 @@ const KanbanBoard = ({ columns, tasks, actions, onTaskClick, onAddTask, onAiGene
   const [activeTask, setActiveTask] = useState(null);
   const [activeColumnId, setActiveColumnId] = useState(null);
   const scrollRef = useRef(null);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
 
   const handleWheel = (e) => {
+    // На мобильных не перехватываем скролл
+    if (!isDesktop) return;
+    
     if (activeColumnId) return; 
     if (scrollRef.current) {
       scrollRef.current.scrollLeft += e.deltaY;
@@ -36,6 +41,7 @@ const KanbanBoard = ({ columns, tasks, actions, onTaskClick, onAddTask, onAiGene
 
   useEffect(() => {
     const handleClickOutside = (e) => {
+      // Если кликнули вне колонки (нет data-column-id), сбрасываем активную колонку
       if (!e.target.closest('[data-column-id]')) {
         setActiveColumnId(null);
       }
@@ -46,8 +52,19 @@ const KanbanBoard = ({ columns, tasks, actions, onTaskClick, onAddTask, onAiGene
     };
   }, []);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+    const sensors = useSensors(
+    // Для мышки
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    // Для тач-экранов
+    useSensor(TouchSensor, { 
+      activationConstraint: { delay: 200, tolerance: 10 } // Увеличили задержку и допуск
+    })
   );
 
   const tasksByColumn = useMemo(() => {
@@ -92,7 +109,7 @@ const KanbanBoard = ({ columns, tasks, actions, onTaskClick, onAddTask, onAiGene
       return;
     }
 
-    // 2. ЛОГИКА ДЛЯ ЗАДАЧ
+        // 2. ЛОГИКА ДЛЯ ЗАДАЧ
     const activeId = active.id;
     const activeTaskObj = tasks.find((t) => t.id === activeId);
     if (!activeTaskObj) return;
@@ -102,6 +119,11 @@ const KanbanBoard = ({ columns, tasks, actions, onTaskClick, onAddTask, onAiGene
     if (overData?.type === "column") targetColumnId = over.id;
     else if (overData?.type === "task") targetColumnId = overData.task.column_id;
     else targetColumnId = activeTaskObj.column_id;
+
+    // ГЛАВНАЯ ПРАВКА: Если бросили в пустое место той же колонки — ничего не делаем
+    if (activeTaskObj.column_id === targetColumnId && overData?.type !== "task") {
+      return;
+    }
 
     const siblings = (tasksByColumn[targetColumnId] || []).filter((t) => t.id !== activeId);
 
@@ -115,6 +137,7 @@ const KanbanBoard = ({ columns, tasks, actions, onTaskClick, onAddTask, onAiGene
 
     const newPosition = positionForIndex(siblings, index);
 
+    // Если позиция не изменилась, тоже ничего не делаем
     if (activeTaskObj.column_id === targetColumnId && activeTaskObj.position === newPosition) {
       return;
     }
@@ -133,13 +156,14 @@ const KanbanBoard = ({ columns, tasks, actions, onTaskClick, onAddTask, onAiGene
         droppable: { strategy: "always" },
       }}
     >
-      <div ref={scrollRef} onWheel={handleWheel} className="flex h-full gap-4 overflow-x-auto px-4 pt-2 pb-6 md:gap-5 md:px-6">
+      <div ref={scrollRef} onWheel={handleWheel} className="flex h-full gap-4 overflow-x-auto px-4 pt-1 pb-2 md:gap-5 md:px-6">
         <SortableContext items={columns.map(c => `column-${c.id}`)} strategy={horizontalListSortingStrategy}>
           {columns.map((col, i) => (
             <Column
               key={col.id}
               column={col}
               index={i}
+              isDesktop={isDesktop}
               tasks={tasksByColumn[col.id] || []}
               onTaskClick={onTaskClick}
               onAddTask={onAddTask}
@@ -160,7 +184,7 @@ const KanbanBoard = ({ columns, tasks, actions, onTaskClick, onAddTask, onAiGene
         </button>
       </div>
 
-      <DragOverlay>
+      <DragOverlay dropAnimation={null}>
         {activeTask ? (
           <div className="w-[314px]">
             <TaskCard task={activeTask} overlay />

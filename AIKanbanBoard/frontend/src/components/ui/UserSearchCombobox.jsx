@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Search, Loader2, X } from "lucide-react";
 import Avatar from "./Avatar";
 import { userApi } from "../../lib/api";
@@ -9,13 +10,45 @@ const UserSearchCombobox = ({ onSelect, placeholder = "Поиск по имен�
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+  
   const ref = useRef(null);
+  const inputRef = useRef(null);
 
-  // Дебаунс для поиска (чтобы не спамить сервер)
+  // Обновляем координаты при открытии или ресайзе
+  const updateCoords = () => {
+    if (inputRef.current) {
+      const rect = inputRef.current.getBoundingClientRect();
+      setCoords({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      updateCoords();
+      window.addEventListener("resize", updateCoords);
+      window.addEventListener("scroll", updateCoords, true);
+      return () => {
+        window.removeEventListener("resize", updateCoords);
+        window.removeEventListener("scroll", updateCoords, true);
+      };
+    }
+  }, [isOpen]);
+
+  // Дебаунс для поиска
   useEffect(() => {
     if (query.length < 2) {
       setResults([]);
       setIsOpen(false);
+      return;
+    }
+
+    // Если это точное имя выбранного пользователя — не ищем снова
+    if (results.length === 1 && results[0].name === query) {
       return;
     }
 
@@ -35,10 +68,13 @@ const UserSearchCombobox = ({ onSelect, placeholder = "Поиск по имен�
     return () => clearTimeout(timer);
   }, [query]);
 
-  // Закрытие при клике вне компонента
+  // Закрытие при клике вне компонента (и вне портала)
   useEffect(() => {
     const onClick = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) {
+      if (
+        ref.current && !ref.current.contains(e.target) &&
+        !e.target.closest(".search-results-portal")
+      ) {
         setIsOpen(false);
       }
     };
@@ -57,6 +93,7 @@ const UserSearchCombobox = ({ onSelect, placeholder = "Поиск по имен�
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-faint" />
         <input
+          ref={inputRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={placeholder}
@@ -75,28 +112,34 @@ const UserSearchCombobox = ({ onSelect, placeholder = "Поиск по имен�
         )}
       </div>
 
-      {isOpen && results.length > 0 && (
-        <div className="absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-line bg-surface p-1 shadow-[var(--shadow-lift)]">
-          {results.map((u) => (
-            <button
-              key={u.id}
-              onClick={() => handleSelect(u)}
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-surface-2"
-            >
-              <Avatar name={u.name} id={u.id} src={u.avatar_url} size="xs" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-medium">{u.name}</p>
-                <p className="truncate text-xs text-muted">{u.email}</p>
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {isOpen && query.length >= 2 && results.length === 0 && !loading && (
-        <div className="absolute z-20 mt-1 w-full rounded-xl border border-line bg-surface p-3 text-center text-sm text-muted shadow-[var(--shadow-lift)]">
-          Ничего не найдено
-        </div>
+      {isOpen && createPortal(
+        <div
+          className="search-results-portal fixed z-[9999] w-full overflow-hidden rounded-xl border border-line bg-surface shadow-[var(--shadow-lift)]"
+          style={{ top: coords.top, left: coords.left, width: coords.width }}
+        >
+          {results.length > 0 ? (
+            <div className="max-h-[180px] overflow-y-auto p-1">
+              {results.map((u) => (
+                <button
+                  key={u.id}
+                  onClick={() => handleSelect(u)}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-surface-2"
+                >
+                  <Avatar name={u.name} id={u.id} src={u.avatar_url} size="xs" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">{u.name}</p>
+                    <p className="truncate text-xs text-muted">{u.email}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : query.length >= 2 && !loading ? (
+            <div className="p-3 text-center text-sm text-muted">
+              Ничего не найдено
+            </div>
+          ) : null}
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -32,20 +32,21 @@ const FinalCTA = () => (
           <Sparkles className="h-3.5 w-3.5" /> Начните за секунды
         </span>
         <h2 className="mx-auto mt-6 max-w-2xl font-display text-[clamp(30px,4.5vw,50px)] font-semibold leading-[1.05] tracking-tight">
-          Готовы <span className="text-gradient">релизить быстрее?</span>
+          Готовы <span className="text-gradient">планировать быстрее?</span>
         </h2>
         <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-muted">
           Присоединяйтесь к командам, которые превращают цели в готовый продукт с помощью Канбана с ИИ.
         </p>
-        <div className="mt-9 flex items-center justify-center gap-3">
-          <Link to="/register">
-            <Button size="lg" className="gap-2">
+        
+        <div className="mt-9 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
+          <Link to="/register" className="w-full sm:w-auto">
+            <Button size="lg" className="w-full gap-2 justify-center sm:w-auto">
               Начать <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
-          <Link to="/login">
-            <Button size="lg" variant="outline">
-              Демонстрационная версия
+          <Link to="/login" className="w-full sm:w-auto">
+            <Button size="lg" variant="outline" className="w-full justify-center sm:w-auto">
+              Демо-версия
             </Button>
           </Link>
         </div>
@@ -63,8 +64,8 @@ const FinalCTA = () => (
             ))}
           </div>
           <p className="text-sm text-muted">
-            Нас любят <span className="font-semibold text-ink">2,500+</span>{" "}
-            команд
+            Мы помогаем <span className="font-semibold text-ink">2,500+</span>{" "}
+            командам
           </p>
         </div>
       </div>

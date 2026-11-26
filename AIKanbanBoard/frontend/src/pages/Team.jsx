@@ -147,8 +147,7 @@ const Team = () => {
             </span>
             <button
               onClick={() => setAddMemberOpen(true)}
-              className="flex h-9 items-center gap-1.5 rounded-full bg-brand-500 px-4 text-xs font-semibold text-white transition-colors hover:bg-brand-600"
-            >
+              className="brand-gradient flex h-9 items-center gap-1.5 rounded-full px-4 text-xs font-semibold text-white transition-all hover:opacity-90 shadow-[var(--shadow-brand)]">
               <Plus className="h-3.5 w-3.5" /> Добавить в команду
             </button>
           </div>
@@ -384,7 +383,6 @@ const Team = () => {
           <UserSearchCombobox 
             onSelect={(user) => {
               setFoundUser(user);
-              setAddEmail(user.email);
             }} 
           />
           {/* Если пользователь уже выбран, показываем карточку и выбор доски */}

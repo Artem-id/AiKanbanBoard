@@ -36,7 +36,7 @@ const Hero = () => (
   <section className="px-3 pb-20 pt-4 sm:px-6 sm:pb-24 sm:pt-6">
     <div className="mx-auto max-w-[88rem]">
       {/* ── gradient hero panel ─────────────────────────────────────────── */}
-      <div className="brand-gradient animate-gradient-pan relative overflow-hidden rounded-[2rem] px-6 pb-56 pt-16 text-center shadow-[var(--shadow-lift)] sm:rounded-[2.5rem] sm:pb-64 sm:pt-24">
+      <div className="brand-gradient animate-gradient-pan relative overflow-hidden rounded-[2rem] px-6 pb-16 pt-12 text-center shadow-[var(--shadow-lift)] sm:rounded-[2.5rem] sm:pb-64 sm:pt-24">
         {/* soft abstract geometry + depth */}
         <div
           className="pointer-events-none absolute inset-0"
@@ -118,7 +118,7 @@ const Hero = () => (
             </Link>
             <Link to="/login">
               <button className="inline-flex h-12 items-center justify-center rounded-full border border-white/30 bg-white/10 px-6 text-sm font-semibold text-white backdrop-blur transition-colors hover:bg-white/20">
-                Демонстрационная версия 
+                Демо-версия 
               </button>
             </Link>
           </div>
@@ -133,11 +133,11 @@ const Hero = () => (
         initial={{ opacity: 0, y: 28 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.2, ease: EASE }}
-        className="relative z-10 mx-auto -mt-48 max-w-6xl px-2 sm:-mt-52"
+        className="relative z-10 mx-auto mt-8 max-w-6xl px-4 sm:-mt-52 sm:px-2"
       >
         <div className="grid items-end gap-4 sm:grid-cols-12">
           {/* left — sprint snapshot */}
-          <div className="rounded-3xl border border-line bg-surface p-5 text-left shadow-[var(--shadow-lift)] sm:col-span-3">
+          <div className="col-span-full rounded-3xl border border-line bg-surface p-5 text-left shadow-[var(--shadow-lift)] sm:col-span-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wide text-muted">
                 Этот спринт
@@ -167,7 +167,7 @@ const Hero = () => (
           </div>
 
           {/* center — polished app preview (the centerpiece) */}
-          <div className="overflow-hidden rounded-3xl border border-line bg-surface text-left shadow-[var(--shadow-lift)] sm:col-span-6 sm:-translate-y-8">
+          <div className="col-span-full overflow-hidden rounded-3xl border border-line bg-surface text-left shadow-[var(--shadow-lift)] sm:col-span-6 sm:-translate-y-8">
             {/* window chrome */}
             <div className="flex items-center gap-2 border-b border-line px-4 py-3">
               <span className="flex gap-1.5">
@@ -254,7 +254,7 @@ const Hero = () => (
           </div>
 
           {/* right — AI generated */}
-          <div className="rounded-3xl border border-line bg-surface p-5 text-left shadow-[var(--shadow-lift)] sm:col-span-3">
+          <div className="col-span-full rounded-3xl border border-line bg-surface p-5 text-left shadow-[var(--shadow-lift)] sm:col-span-3">
             <div className="flex items-center gap-2">
               <span className="brand-gradient grid h-7 w-7 place-items-center rounded-lg text-white">
                 <Sparkles className="h-4 w-4" />

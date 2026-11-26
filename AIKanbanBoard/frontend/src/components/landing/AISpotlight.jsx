@@ -69,7 +69,7 @@ const AISpotlight = () => (
         </div>
 
         {/* mock UI */}
-        <div className="relative">
+        <div className="relative w-full overflow-hidden">
           <div className="relative rounded-2xl border border-white/15 bg-white/10 p-5 shadow-2xl backdrop-blur-md">
             <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/10 p-2.5">
               <Sparkles className="h-4 w-4 shrink-0 text-white/80" />

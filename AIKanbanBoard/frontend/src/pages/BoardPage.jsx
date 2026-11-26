@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Sparkles, FileText, Users, Activity, Search, ChevronLeft, Pencil, Trash2, BarChart2 } from "lucide-react";
+import { Sparkles, FileText, Users, Activity, Search, ChevronLeft, Pencil, Trash2, BarChart2, Filter } from "lucide-react";
 import { useBoard } from "../hooks/useBoard";
 import { useLayout } from "../components/layout/AppLayout";
 import { aiApi } from "../lib/api";
@@ -57,6 +57,8 @@ const BoardPage = () => {
 
   const [actionsMenuOpen, setActionsMenuOpen] = useState(false);
   const actionsMenuRef = useRef(null);
+
+  const [showFilters, setShowFilters] = useState(false);
 
   // Автооткрытие задачи при переходе по ссылке из уведомления
   useEffect(() => {
@@ -143,9 +145,9 @@ const BoardPage = () => {
           <BarChart2 className="h-5 w-5" />
         </button>
         
-                {actionsMenuOpen && (
+        {actionsMenuOpen && (
           <div 
-            className="absolute right-0 top-full z-[9999] mt-2 w-56 rounded-2xl border border-line bg-surface p-1.5 shadow-[var(--shadow-lift)] animate-in slide-in-from-top-2"
+            className="fixed left-4 right-4 top-[72px] z-[9999] flex flex-col rounded-2xl border border-line bg-surface p-1.5 shadow-[var(--shadow-lift)] animate-in slide-in-from-top-2 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-56"
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
           >
@@ -255,8 +257,54 @@ const BoardPage = () => {
         onCreateBoard={openCreateBoard}
       />
 
-      {/* Filter bar */}
-      <div className="flex flex-wrap items-center gap-2.5 px-4 py-3.5 md:px-6">
+{/* Filter bar (Мобильная версия) */}
+      <div className="md:hidden">
+        <div className="flex items-center justify-between px-4 py-2">
+          <button 
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:text-ink"
+          >
+            <Filter className="h-3.5 w-3.5" /> Фильтры
+          </button>
+          <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-medium tabular text-muted">
+            {filteredTasks.length} задач
+          </span>
+        </div>
+        {showFilters && (
+          <div className="space-y-3 border-b border-line bg-surface p-4">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-faint" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Поиск задач"
+                className="h-10 w-full rounded-xl border border-line bg-surface pl-9 pr-4 text-sm outline-none focus:border-brand-500"
+              />
+            </div>
+            <div className="flex gap-2">
+              <FilterSelect value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)} className="flex-1">
+                <option value="">Все приоритеты</option>
+                {PRIORITIES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+              </FilterSelect>
+              <FilterSelect value={filterAssignee} onChange={(e) => setFilterAssignee(e.target.value)} className="flex-1">
+                <option value="">Все исполнители</option>
+                {b.members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </FilterSelect>
+            </div>
+            {(filterPriority || filterAssignee || search) && (
+              <button
+                onClick={() => { setFilterPriority(""); setFilterAssignee(""); setSearch(""); }}
+                className="w-full rounded-xl bg-surface-2 py-2 text-sm font-medium text-ink"
+              >
+                Сбросить
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Filter bar (Десктопная версия) */}
+      <div className="hidden md:flex flex-wrap items-center gap-2.5 px-6 py-3.5">
         <div className="relative w-full sm:w-auto">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-faint" />
           <input
@@ -288,7 +336,7 @@ const BoardPage = () => {
       </div>
 
       {/* Board */}
-      <div className="flex-1 overflow-hidden pt-4">
+      <div className="flex-1 overflow-hidden pt-1">
         {b.loading ? (
           <div className="flex gap-4 px-6">
             {[0, 1, 2, 3].map((i) => <ColumnSkeleton key={i} />)}

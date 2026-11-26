@@ -17,11 +17,9 @@ const COLUMN_COLORS = [
   { value: "#ec4899", label: "Розовый (яркий)" },
 ];
 
-const Column = ({ column, tasks, index = 0, onTaskClick, onAddTask, onRename, onDelete, onAiGenerate, isActive, onActivate }) => {
-  // Drop zone для задач
+const Column = ({ column, tasks, index = 0, isDesktop = true, onTaskClick, onAddTask, onRename, onDelete, onAiGenerate, isActive, onActivate }) => {
   const { setNodeRef: setDroppableRef, isOver } = useDroppable({ id: column.id, data: { type: "column", column } });
   
-  // Сортировка для перетаскивания самой колонки
   const { attributes, listeners, setNodeRef: setSortableRef, transform, transition, isDragging } = useSortable({
     id: `column-${column.id}`,
     data: { type: "column-drag", column },
@@ -29,13 +27,14 @@ const Column = ({ column, tasks, index = 0, onTaskClick, onAddTask, onRename, on
 
   const style = {
     transform: CSS.Translate.toString(transform),
-    transition,
+    transition: transition ? `${transition}, background-color 0.2s` : undefined,
+    // Убираем лишние эффекты, оставляем только то, что нужно для dnd-kit
   };
 
-  // Если в базе сохранен цвет — используем его. Если нет — генерируем по ID.
   const accent = column.color 
     ? { dot: column.color, soft: `${column.color}15`, ring: `${column.color}40` } 
     : columnAccent(column.id);
+    
   const [menuOpen, setMenuOpen] = useState(false);
   const [colorMenuOpen, setColorMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -64,18 +63,26 @@ const Column = ({ column, tasks, index = 0, onTaskClick, onAddTask, onRename, on
   return (
     <div
       ref={setSortableRef}
-      style={{ ...style, backgroundColor: accent.soft, ...(isOver ? { "--tw-ring-color": accent.ring } : {}) }}
-      onClick={(e) => { onActivate(); }}
+      data-column-id={column.id}
+      style={{ ...style, backgroundColor: isOver ? accent.ring : accent.soft, ...(isOver ? { "--tw-ring-color": accent.ring } : {}) }}
+      onClick={(e) => {
+        // На десктопе клик по колонке делает её активной
+        if (isDesktop) onActivate();
+      }}
       className={cn(
-        "flex h-full w-[330px] shrink-0 flex-col rounded-2xl p-2.5 transition-colors",
-        isOver && "ring-2 ring-inset",
-        isActive && "ring-2 ring-brand-500/50",
+        "flex h-full w-[330px] shrink-0 flex-col rounded-2xl p-2.5 transition-all duration-200",
+        isOver && "ring-2 ring-inset", 
+        isActive && isDesktop && "ring-2 ring-brand-500/50",
         isDragging && "opacity-50"
       )}
     >
-      {/* Header */}
-            <div className="mb-2 flex items-center gap-2 px-1.5 pt-1 relative">
-        {/* Кнопка-кружок для открытия палитры */}
+    {/* Header */}
+      <div 
+        data-drag-handle 
+        className="mb-2 flex items-center gap-2 px-1.5 pt-1 relative touch-none"
+        {...(!isDesktop ? (attributes || {}) : {})}
+        {...(!isDesktop ? (listeners || {}) : {})}
+      >
         <button
           onClick={() => setColorMenuOpen((o) => !o)}
           className="h-3.5 w-3.5 shrink-0 rounded-full cursor-pointer ring-2 ring-transparent hover:ring-brand-500 transition-all z-10"
@@ -83,7 +90,6 @@ const Column = ({ column, tasks, index = 0, onTaskClick, onAddTask, onRename, on
           title="Изменить цвет"
         />
 
-        {/* Само выпадающее меню с палитрой */}
         {colorMenuOpen && (
           <div ref={colorMenuRef} className="absolute top-6 left-0 z-50 flex w-32 flex-wrap gap-1.5 rounded-xl bg-surface p-2 shadow-[var(--shadow-lift)] border border-line">
             {COLUMN_COLORS.map((c) => (
@@ -101,8 +107,11 @@ const Column = ({ column, tasks, index = 0, onTaskClick, onAddTask, onRename, on
           </div>
         )}
 
-        {/* Ручка для перетаскивания (остается без изменений) */}
-        <div {...attributes} {...listeners} className="cursor-grab p-1 text-faint hover:bg-surface-2 hover:text-ink rounded-md">
+        <div 
+          {...(attributes || {})} 
+          {...(listeners || {})} 
+          className="flex cursor-grab items-center gap-1 p-1 text-faint hover:bg-surface-2 hover:text-ink rounded-md"
+        >
           <GripVertical className="h-4 w-4" />
         </div>
 
@@ -157,8 +166,16 @@ const Column = ({ column, tasks, index = 0, onTaskClick, onAddTask, onRename, on
         </div>
       </div>
 
-      {/* Drop zone для задач */}
-      <div ref={setDroppableRef} className={`flex flex-1 flex-col gap-2.5 px-0.5 pb-1 no-scrollbar ${isActive ? "overflow-y-auto" : "overflow-y-hidden"}`}>
+      {/* Drop zone */}
+      <div 
+        ref={setDroppableRef} 
+        className={cn(
+          "flex flex-1 flex-col gap-2.5 px-0.5 pb-1 no-scrollbar",
+          isDesktop 
+            ? (isActive ? "overflow-y-auto touch-pan-y" : "overflow-y-hidden") 
+            : "overflow-y-auto touch-pan-y"
+        )}
+      >
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
             <TaskCard 
