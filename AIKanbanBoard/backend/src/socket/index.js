@@ -14,12 +14,14 @@ const userCanAccessBoard = async (userId, boardId) => {
 };
 
 const initSocket = (httpServer) => {
-  const io = new Server(httpServer, {
+    const io = new Server(httpServer, {
     cors: {
-      origin: process.env.CLIENT_URL || "http://localhost:5173",
+      origin: process.env.CLIENT_URL || "http://136.234.175.21", // Укажите ваш IP или домен
       methods: ["GET", "POST"],
       credentials: true,
     },
+    // Важно для работы за прокси Nginx:
+    transports: ["websocket", "polling"], 
   });
 
   io.use((socket, next) => {
